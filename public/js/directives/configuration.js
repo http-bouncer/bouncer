@@ -1,7 +1,7 @@
 bouncerApp.directive("addbackendserverinput", function(){
 	return {
 		restrict: "E",
-		template: '<button addinput class="btn btn-success btn-sm backendServerButtons">' +
+		template: '<button addinput id="add-input-button" class="btn btn-success btn-sm backendServerButtons">' +
            		 '<span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>' +
            		 '<button removeinput class="btn btn-danger btn-sm backendServerButtons" id="remove-input-button">' +
            		 '<span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>'

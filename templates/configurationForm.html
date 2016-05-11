@@ -1,0 +1,57 @@
+<form id="add-configuration-form">
+   
+                  <div class="form-group">
+                      <label>Configurations</label>
+                      <select ng-model="selection" ng-change="configurationSelected(c)" class="form-control" id="config-select" ng-options='(c.Host + "/" + c.Path) for c in configs'></select>
+                  </div>
+                  <div class="form-group">
+                      <label>Host name</label>
+                      <input  class="form-control" name= "hostName" ng-model="config.hostName" id="" ng-init="config.hostName='localhost:9090'" disabled >
+                  </div>
+                  <div class="form-group">
+                    <div class="col-md-6">
+                      <label>Path</label>
+                      <input class="form-control" name= "path" ng-disabled="updateMode" ng-model="config.path" id="pathInput" placeholder="Path...">
+                    </div>
+                    <div class="col-md-6">
+                       <label>Target Path</label>
+                      <input  class="form-control" name= "targetPath" ng-model="config.targetPath" id="targetPathInput" placeholder="Target path...">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-md-6">
+                      <label>Requests Per Seconds</label>
+                      <input  class="form-control" name= "reqPerSecond" ng-model="config.reqPerSecond" id="" placeholder="Request per seconds...">
+                    </div>
+                    <div class="col-md-6">
+                       <label>Concurrency</label>
+                      <input  class="form-control" name= "concurrency" ng-model="config.concurrency" id="" placeholder="Concurrency...">
+                    </div>
+                  </div>
+                  <label id="backendServerFormLabel">Backend Servers</label>
+                  <div class="form-group" id="backend-servers">
+                      <addbackendserverinput></addbackendserverinput>
+                      <input  class="form-control backendServerInput" name= "backendServer" ng-model="config.backendServer1" id="backendServerInput1" placeholder="Enter backend server name...">
+                  </div>
+                    <button class="btn btn-danger btn-md" id="resetButton" ng-click="reload()">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        Reset
+                    </button>
+                    <button class="btn btn-success btn-md" id="updateButton" ng-click="addConfiguration(config)">
+                        <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                        Add
+                    </button>
+                    <button class="btn btn-primary btn-md" id="saveButton" ng-click="updateConfiguration(config)">
+                        <span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span>
+                        Update
+                    </button>
+
+                    <div class="alert alert-success" id="successAddAlert" ng-show="addAlertMessage">
+                      Successfully saved.
+                    </div>
+
+                    <div class="alert alert-success" id="successUpdateAlert" ng-show="updateAlertMessage">
+                      Successfully updated.
+                    </div>
+
+                </form>

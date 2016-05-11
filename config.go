@@ -17,9 +17,9 @@ type Config struct {
 	MaxConcurrentPerBackendServer int
 	BackendServers                []BackendServer
 	NextBackendServer             chan BackendServer `json:"-"`
-	quitBootstrap                 chan struct{}      `json:"-"`
-	Throttle                      chan struct{}      `json:"-"`
-	quitRatelimit                 chan struct{}      `json:"-"`
+	quitBootstrap                 chan struct{}
+	Throttle                      chan struct{} `json:"-"`
+	quitRatelimit                 chan struct{}
 }
 
 type BackendServer struct {

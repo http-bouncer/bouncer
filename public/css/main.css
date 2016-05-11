@@ -135,7 +135,8 @@ nav li a, #dropdown-menu{
     margin-bottom: 20px;
  }
 
-.backend-server-input, #backendServerFormLabel, .configuration-tabs, #showRequestsGraph, #config-select, #remove-configs-table{
+.backend-server-input, #backendServerFormLabel, .configuration-tabs, #showRequestsGraph, #config-select, #remove-configs-table,
+#successAddAlert, #successUpdateAlert{
     margin-top: 10px;
 }
 
@@ -145,4 +146,8 @@ nav li a, #dropdown-menu{
 
 #remove-input-button{
     margin-left: 10px;
+}
+
+#saveButton, #updateButton, #resetButton {
+    width: 100px;
 }

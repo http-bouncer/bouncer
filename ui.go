@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var connections map[*websocket.Conn]bool
 var statChan chan GlobalStatRecord
-var configStore ConfigStore
 
 func getAllConfigs(w http.ResponseWriter, r *http.Request) {
 	allConfigs := configStore.GetAllConfigs()
@@ -30,17 +30,33 @@ func removeConfiguration(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	config := configStore.GetConfig(configMap["Host"].(string), configMap["Path"].(string))
+	configStore.RemoveConfig(config)
+}
 
-	allConfigs := configStore.GetAllConfigs()
-	for _, v := range allConfigs {
-		if v.Path == configMap["path"].(string) && v.TargetPath == configMap["target"].(string) {
-			configStore.RemoveConfig(v)
-		}
-		// log.Println(k)
-		// log.Println(v.)
+func updateConfiguration(w http.ResponseWriter, r *http.Request) {
+	var configMap map[string]interface{}
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&configMap)
+	if err != nil {
+		panic(err)
 	}
 
-	//configStore.RemoveConfig(config)
+	config := configStore.GetConfig(configMap["host"].(string), configMap["path"].(string))
+	config.TargetPath = configMap["targetPath"].(string)
+	config.MaxConcurrentPerBackendServer = int(configMap["concurrency"].(float64))
+	config.ReqPerSecond = int(configMap["reqPerSecond"].(float64))
+	backendServerArr := make([]BackendServer, len(configMap["backendServers"].([]interface{})))
+
+	for k, v := range configMap["backendServers"].([]interface{}) {
+		backendServer := NewBackendServer(v.(map[string]interface{})["host"].(string))
+		backendServerArr[k] = backendServer
+	}
+	config.BackendServers = backendServerArr
+
+	configStore.UpdateConfig(config)
+	config.Reload()
 }
 
 func addConfiguration(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +81,7 @@ func addConfiguration(w http.ResponseWriter, r *http.Request) {
 	configStore.AddConfig(&config)
 }
 
-func closeConnectionListener(conn *websocket.Conn, quit chan *websocket.Conn) {
+func closeConnectionListener(conn *websocket.Conn, quit chan *websocket.Conn, newConfig chan *Config, nc chan GlobalStatRecord) {
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
@@ -73,23 +89,26 @@ func closeConnectionListener(conn *websocket.Conn, quit chan *websocket.Conn) {
 			conn.Close()
 			return
 		}
-		if string(msg) == "quit" {
+
+		//nc := make(chan GlobalStatRecord)
+		log.Println(string(msg)[0:5])
+		log.Println(string(msg))
+		if string(msg) == "quit,default" {
 			quit <- conn
-		} else { //Get host name
+			UnsubscribeConfigStats(defaultConfig, nc)
+		} else if string(msg)[0:5] == "quit," {
+			log.Println("quittt  config listener")
+			arr := strings.Split(string(msg), ",")
+			config := configStore.GetConfig(arr[1], arr[2])
+			quit <- conn
+			UnsubscribeConfigStats(config, nc)
+		} else { //Get host  and path
 			log.Println(string(msg))
-			log.Println("got message")
+			arr := strings.Split(string(msg), ",")
+			config := configStore.GetConfig(arr[0], arr[1])
+			newConfig <- config
 		}
 	}
-}
-
-func updateStats(quit chan *websocket.Conn, nc chan GlobalStatRecord) {
-	//Test.
-	// proxy := &ReverseProxy{Director: director}
-	// config := NewConfig("localhost:9094", []BackendServer{NewBackendServer("localhost:9091"), NewBackendServer("localhost:9092")}, "", "", 10, 200)
-	// configStore.AddConfig(&config)
-	// defaultConfig = &config
-
-	// go http.ListenAndServe("localhost:9094"[len("localhost:9094")-5:], proxy)
 }
 
 func socketHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,10 +126,11 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 
 	quit := make(chan *websocket.Conn)
 	nc := make(chan GlobalStatRecord)
+	newConfig := make(chan *Config)
 	SubscribeConfigStats(defaultConfig, nc)
 	// for conn := range connections {
 	log.Println("in conn")
-	go closeConnectionListener(conn, quit)
+	go closeConnectionListener(conn, quit, newConfig, nc)
 	for {
 		select {
 		//case astat := <-globalStatSink:
@@ -138,10 +158,16 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 					conn.Close()
 				}
 			}
+		case config := <-newConfig:
+			nc := make(chan GlobalStatRecord)
+			SubscribeConfigStats(config, nc)
+
 		case socketConnection := <-quit: //Put an empty struct?
 			delete(connections, socketConnection)
+			UnsubscribeConfigStats(defaultConfig, nc)
 			socketConnection.Close()
 			return
+
 		}
 	}
 	//}
@@ -150,8 +176,15 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 
 func UIServer() {
 	connections = make(map[*websocket.Conn]bool)
-	configStore = make(ConfigStore)
-	log.Println(configStore) //I'm using this to escape from "not used" error. I don't know where else to assign configStore.
+	//Test
+	// config := NewConfig(
+	// 	"localhost:9090",
+	// 	[]BackendServer{NewBackendServer("localhost:9091"), NewBackendServer("localhost:9092")},
+	// 	"abc",
+	// 	"",
+	// 	13,
+	// 	250)
+	// configStore.AddConfig(&config)
 
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))
 	http.Handle("/", http.FileServer(http.Dir("./templates/")))
@@ -166,6 +199,7 @@ func UIServer() {
 	log.Println("listening on", listen)
 	http.HandleFunc("/addConfiguration", addConfiguration)
 	http.HandleFunc("/removeConfiguration", removeConfiguration)
+	http.HandleFunc("/updateConfiguration", updateConfiguration)
 	http.HandleFunc("/getAllConfigs", getAllConfigs)
 	http.ListenAndServe(listen, nil)
 }
