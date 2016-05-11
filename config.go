@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/url"
 	"regexp"
 	"sort"
 	"sync"
@@ -109,6 +108,9 @@ func (a *HostConfigs) AddConfig(config *Config) {
 	a.configs = append(a.configs, config)
 	sort.Sort(a)
 	a.mutex.Unlock()
+	go func() {
+		AddConfig <- config
+	}()
 }
 
 func (a *HostConfigs) RemoveConfig(config *Config) {
@@ -121,6 +123,9 @@ func (a *HostConfigs) RemoveConfig(config *Config) {
 	}
 	sort.Sort(a)
 	a.mutex.Unlock()
+	go func() {
+		RemoveConfig <- config
+	}()
 }
 
 func (a *HostConfigs) UpdateConfig(config *Config) {
@@ -134,6 +139,9 @@ func (a *HostConfigs) UpdateConfig(config *Config) {
 	}
 	sort.Sort(a)
 	a.mutex.Unlock()
+	go func() {
+		UpdateConfig <- config
+	}()
 }
 
 func (a HostConfigs) Match(path string) *Config {
@@ -169,10 +177,10 @@ func (a ConfigStore) UpdateConfig(config *Config) {
 	}
 }
 
-func (a ConfigStore) Match(target *url.URL) *Config {
+func (a ConfigStore) Match(host string, path string) *Config {
 	var config *Config
-	if val, ok := a[target.Host]; ok {
-		return val.Match(target.Path)
+	if val, ok := a[host]; ok {
+		return val.Match(path)
 	}
 	return config
 }
