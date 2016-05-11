@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/url"
 	"regexp"
 	"sort"
 	"sync"
@@ -178,10 +177,10 @@ func (a ConfigStore) UpdateConfig(config *Config) {
 	}
 }
 
-func (a ConfigStore) Match(target *url.URL) *Config {
+func (a ConfigStore) Match(host string, path string) *Config {
 	var config *Config
-	if val, ok := a[target.Host]; ok {
-		return val.Match(target.Path)
+	if val, ok := a[host]; ok {
+		return val.Match(path)
 	}
 	return config
 }

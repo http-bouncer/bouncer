@@ -32,10 +32,6 @@ func DbOperaitons() {
 	}
 }
 
-func LoadDataFromDb() {
-
-}
-
 func ResetDatabase() {
 	os.Remove("./bouncer.db")
 	var err error

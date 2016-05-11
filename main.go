@@ -16,11 +16,12 @@ func main() {
 	config := NewConfig(
 		"localhost:9090",
 		[]BackendServer{NewBackendServer("localhost:9091"), NewBackendServer("localhost:9092")},
-		"",
-		"",
+		"/",
+		"/",
 		10,
 		200)
 	defaultConfig = &config
+	configStore.AddConfig(defaultConfig)
 	configCurrentStats = make(map[*Config]*CurrentStats)
 	globalStatSubscribers.Init()
 	configStatSubscribers.Init()
@@ -35,7 +36,7 @@ func main() {
 }
 
 func director(req *http.Request) (*Config, *BackendServer) {
-	config := defaultConfig
+	config := configStore.Match(req.Host, req.URL.Path)
 	<-config.Throttle
 	select {
 	case next := <-config.NextBackendServer:
