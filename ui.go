@@ -127,7 +127,7 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 	quit := make(chan *websocket.Conn)
 	nc := make(chan GlobalStatRecord)
 	newConfig := make(chan *Config)
-	SubscribeConfigStats(defaultConfig, nc)
+	//SubscribeConfigStats(defaultConfig, nc)
 	// for conn := range connections {
 	log.Println("in conn")
 	go closeConnectionListener(conn, quit, newConfig, nc)
@@ -159,7 +159,6 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case config := <-newConfig:
-			nc := make(chan GlobalStatRecord)
 			SubscribeConfigStats(config, nc)
 
 		case socketConnection := <-quit: //Put an empty struct?
