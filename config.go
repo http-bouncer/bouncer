@@ -109,6 +109,9 @@ func (a *HostConfigs) AddConfig(config *Config) {
 	a.configs = append(a.configs, config)
 	sort.Sort(a)
 	a.mutex.Unlock()
+	go func() {
+		AddConfig <- config
+	}()
 }
 
 func (a *HostConfigs) RemoveConfig(config *Config) {
@@ -121,6 +124,9 @@ func (a *HostConfigs) RemoveConfig(config *Config) {
 	}
 	sort.Sort(a)
 	a.mutex.Unlock()
+	go func() {
+		RemoveConfig <- config
+	}()
 }
 
 func (a *HostConfigs) UpdateConfig(config *Config) {
@@ -134,6 +140,9 @@ func (a *HostConfigs) UpdateConfig(config *Config) {
 	}
 	sort.Sort(a)
 	a.mutex.Unlock()
+	go func() {
+		UpdateConfig <- config
+	}()
 }
 
 func (a HostConfigs) Match(path string) *Config {
