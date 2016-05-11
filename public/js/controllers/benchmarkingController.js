@@ -23,8 +23,8 @@ bouncerApp.controller('BenchmarkingController', function($scope, $interval, $htt
     $scope.status404Options = { animation: false }
 
     //$scope.startBenchmarking = function(){
-        benchmarking.resetGraph($scope);
-        benchmarking.updateGraph($scope);
+        // benchmarking.resetGraph($scope);
+        // benchmarking.updateGraph($scope);
     //}
 
     $scope.closeConnection = function(config){

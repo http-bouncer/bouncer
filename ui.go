@@ -95,7 +95,7 @@ func closeConnectionListener(conn *websocket.Conn, quit chan *websocket.Conn, ne
 		log.Println(string(msg))
 		if string(msg) == "quit,default" {
 			quit <- conn
-			UnsubscribeConfigStats(defaultConfig, nc)
+			//UnsubscribeConfigStats(defaultConfig, nc)
 		} else if string(msg)[0:5] == "quit," {
 			log.Println("quittt  config listener")
 			arr := strings.Split(string(msg), ",")
@@ -163,7 +163,7 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 
 		case socketConnection := <-quit: //Put an empty struct?
 			delete(connections, socketConnection)
-			UnsubscribeConfigStats(defaultConfig, nc)
+			//UnsubscribeConfigStats(defaultConfig, nc)
 			socketConnection.Close()
 			return
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"regexp"
 	"sort"
 	"sync"
@@ -28,6 +29,7 @@ type BackendServer struct {
 }
 
 func (config *Config) BackendServerBootstrapRoutine(quit chan struct{}) {
+	log.Println("Bootstrapping with ", config.MaxConcurrentPerBackendServer)
 	for i := 0; i < config.MaxConcurrentPerBackendServer; i++ {
 		for _, next := range config.BackendServers {
 			select {
@@ -62,6 +64,7 @@ func (config *Config) Reload() {
 	config.Destroy()
 	config.quitRatelimit = make(chan struct{}, 1)
 	config.quitBootstrap = make(chan struct{}, 1)
+	config.NextBackendServer = make(chan BackendServer, config.MaxConcurrentPerBackendServer)
 	go config.BackendServerBootstrapRoutine(config.quitBootstrap)
 	go config.RateLimiterRoutine(config.quitRatelimit)
 }
