@@ -139,7 +139,7 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 			statusCountsMap := make(map[string]int)
 
 			newStatsMap["totalReq"] = strconv.FormatInt(astat.TotalRequests, 10)
-			newStatsMap["avgRespTime"] = strconv.Itoa(int(astat.AverageResponseTime))
+			newStatsMap["avgRespTime"] = strconv.Itoa(int(astat.AverageResponseTime.Seconds() * 1000.0))
 			newStatsMap["endTime"] = astat.EndTime.Format("15:04:05")
 
 			//Maps that have integer keys cannot be marshalled. Create new map with string keys.

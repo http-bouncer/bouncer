@@ -6,7 +6,7 @@
     <div class="row">
         <div class="col-lg-6 col-md-offset-3 text-center ">
 
-            <select ng-model="selectedConfig" ng-change="configurationSelected(c)" class="form-control" id="config-select" ng-options='(c.Host + "/" + c.Path) for c in configs'></select>
+            <select ng-model="selectedConfig" ng-change="configurationSelected(c)" class="form-control" id="config-select" ng-options='(c.Host + "" + c.Path) for c in configs'></select>
 <!--             <button class="btn btn-success btn-md" id="showRequestsGraph" ng-show="graphOff" ng-click="startBenchmarking()">
                 <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 Start

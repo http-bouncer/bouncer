@@ -2,7 +2,7 @@
    
                   <div class="form-group">
                       <label>Configurations</label>
-                      <select ng-model="selection" ng-change="configurationSelected(c)" class="form-control" id="config-select" ng-options='(c.Host + "/" + c.Path) for c in configs'></select>
+                      <select ng-model="selection" ng-change="configurationSelected(c)" class="form-control" id="config-select" ng-options='(c.Host + "" + c.Path) for c in configs'></select>
                   </div>
                   <div class="form-group">
                       <label>Host name</label>
