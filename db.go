@@ -27,29 +27,69 @@ func DbOperaitons() {
 			err := config.Update()
 			log.Println(err)
 		case <-DbDone:
+			db.Close()
 			return
 		}
 	}
 }
 
-func ResetDatabase() {
-	os.Remove("./bouncer.db")
-	var err error
-	db, err = sql.Open("sqlite3", "./bouncer.db")
-	if err != nil {
-		log.Println(err)
+func LoadDatabase() {
+	if _, err := os.Stat("bouncer.db"); os.IsNotExist(err) {
+		var err error
+		db, err = sql.Open("sqlite3", "./bouncer.db")
+		if err != nil {
+			log.Println(err)
+		}
+		sqlStmt := `
+        create table BackendServer (id integer not null primary key autoincrement, host text, config_id integer, foreign key(config_id) references Config);
+        create table Config (id integer not null primary key autoincrement, host text, path text, targetPath text, reqPerSecond integer, maxConcurrentPerBackendServer integer);
+        delete from Config;
+        delete from BackendServer;
+    	`
+		if _, err = db.Exec(sqlStmt); err != nil {
+			log.Printf("%q: %s\n", err, sqlStmt)
+			return
+		}
+		config := NewConfig(
+			"localhost:9090",
+			[]BackendServer{NewBackendServer("localhost:9091"), NewBackendServer("localhost:9092")},
+			"/",
+			"/",
+			10,
+			200)
+		configStore.AddConfig(&config)
+		defaultConfig = &config
+
+	} else {
+		var err error
+		db, err = sql.Open("sqlite3", "./bouncer.db")
+		if err != nil {
+			log.Println(err)
+		}
+		stmt, err := db.Prepare("select host, path from Config where id >= ?")
+		if err != nil {
+			log.Println(err)
+		}
+		defer stmt.Close()
+
+		rows, err := stmt.Query(0)
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var host string
+			var path string
+			if err = rows.Scan(&host, &path); err != nil {
+				log.Println(err)
+			}
+			config, _ := GetConfig(host, path)
+			loadConfig := NewConfig(config.Host, config.BackendServers, config.Path, config.TargetPath, config.MaxConcurrentPerBackendServer, config.ReqPerSecond)
+			configStore.LoadConfig(&loadConfig)
+			defaultConfig = &loadConfig
+		}
 	}
-	defer db.Close()
-	sqlStmt := `
-    create table BackendServer (id integer not null primary key autoincrement, host text, config_id integer, foreign key(config_id) references Config);
-    create table Config (id integer not null primary key autoincrement, host text, path text, targetPath text, reqPerSecond integer, maxConcurrentPerBackendServer integer);
-    delete from Config;
-    delete from BackendServer;
-	`
-	if _, err = db.Exec(sqlStmt); err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
-		return
-	}
+	return
 }
 
 func (config *Config) Save() error {
@@ -217,17 +257,7 @@ func GetConfigDetails(host string, path string) (Config, error) {
 	}
 	defer stmt.Close()
 	row := stmt.QueryRow(host, path)
-	var targetPath string
-	var id int
-	var reqPerSecond int
-	var maxConcurrentPerBackendServer int
-	err = row.Scan(&id, &host, &path, &targetPath, &reqPerSecond, &maxConcurrentPerBackendServer)
-	config.Id = id
-	config.Host = host
-	config.Path = path
-	config.TargetPath = targetPath
-	config.ReqPerSecond = reqPerSecond
-	config.MaxConcurrentPerBackendServer = maxConcurrentPerBackendServer
+	err = row.Scan(&config.Id, &config.Host, &config.Path, &config.TargetPath, &config.ReqPerSecond, &config.MaxConcurrentPerBackendServer)
 	return config, err
 }
 
@@ -239,15 +269,12 @@ func GetConfig(host string, path string) (Config, error) {
 		log.Println(err)
 		return config, err
 	}
-
-	stmt, err := db.Prepare("select * from BackendServer where config_id = ?")
+	stmt, err := db.Prepare("select host from BackendServer where config_id = ?")
 	if err != nil {
 		log.Println(err)
 		return config, err
 	}
 	defer stmt.Close()
-	log.Println(config.Id)
-
 	rows, err := stmt.Query(config.Id)
 	if err != nil {
 		log.Println(err)
@@ -255,11 +282,12 @@ func GetConfig(host string, path string) (Config, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var backendServer BackendServer
-		if err = rows.Scan(&backendServer.Id, &backendServer.Host, &backendServer.ConfigId); err != nil {
+		var host string
+		if err = rows.Scan(&host); err != nil {
 			return config, err
 		}
-		config.BackendServers = append(config.BackendServers, backendServer)
+		config.BackendServers = append(config.BackendServers, NewBackendServer(host))
 	}
+	config.Id = 0
 	return config, err
 }

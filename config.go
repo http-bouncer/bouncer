@@ -113,6 +113,13 @@ func (a *HostConfigs) AddConfig(config *Config) {
 	}()
 }
 
+func (a *HostConfigs) LoadConfig(config *Config) {
+	a.mutex.Lock()
+	a.configs = append(a.configs, config)
+	sort.Sort(a)
+	a.mutex.Unlock()
+}
+
 func (a *HostConfigs) RemoveConfig(config *Config) {
 	a.mutex.Lock()
 	for index, val := range a.configs {
@@ -161,6 +168,16 @@ func (a ConfigStore) AddConfig(config *Config) {
 	} else {
 		var hostConfigs HostConfigs
 		hostConfigs.AddConfig(config)
+		a[config.Host] = &hostConfigs
+	}
+}
+
+func (a ConfigStore) LoadConfig(config *Config) {
+	if _, ok := a[config.Host]; ok {
+		a[config.Host].LoadConfig(config)
+	} else {
+		var hostConfigs HostConfigs
+		hostConfigs.LoadConfig(config)
 		a[config.Host] = &hostConfigs
 	}
 }
