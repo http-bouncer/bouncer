@@ -32,6 +32,7 @@ func director(req *http.Request) (*Config, *BackendServer) {
 	case next := <-config.NextBackendServer:
 		req.URL.Scheme = "http"
 		req.URL.Host = next.Host
+		req.URL.Path = singleJoiningSlash(config.TargetPath, req.URL.Path)
 		return config, &next
 	case <-time.After(120 * time.Second):
 		return nil, nil

@@ -56,7 +56,7 @@ func LoadDatabase() {
 			"/",
 			"/",
 			10,
-			200)
+			20000)
 		configStore.AddConfig(&config)
 		defaultConfig = &config
 
