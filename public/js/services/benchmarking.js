@@ -130,8 +130,7 @@ bouncerApp.factory('benchmarking', function ($http, $interval) {
         console.log(config);
           if(config != undefined && config.Host != undefined){ 
             conn.send("quit," + config.Host + "," + config.Path);
-            console.log("quit n default");
-          } 
+          }
           else { //Default config
             conn.send("quit,default");
           }
