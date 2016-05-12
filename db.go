@@ -183,7 +183,7 @@ func (config *Config) Remove() error {
 		return err
 	}
 
-	stmt, err = tx.Prepare("delete from Config where config_id = ?")
+	stmt, err = tx.Prepare("delete from Config where id = ?")
 	if err != nil {
 		log.Println(err)
 		tx.Rollback()
@@ -288,6 +288,5 @@ func GetConfig(host string, path string) (Config, error) {
 		}
 		config.BackendServers = append(config.BackendServers, NewBackendServer(host))
 	}
-	config.Id = 0
 	return config, err
 }
